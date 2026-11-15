@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Record Player</title>
+  <rect width="512" height="512" rx="112" fill="#F4B223"/>
+  <path d="M110 70c6 34 14 42 48 48-34 6-42 14-48 48-6-34-14-42-48-48 34-6 42-14 48-48Z" fill="#FBEBD0"/>
+  <circle cx="236" cy="292" r="178" fill="#1D1B4C"/>
+  <g fill="none" stroke="#FBEBD0" stroke-width="6" stroke-linecap="round" opacity=".92">
+    <path d="M311.1 150.7A160 160 0 0 1 388.2 341.4"/>
+    <path d="M332.4 185.0A144 144 0 0 1 360.7 364.0"/>
+    <path d="M339.6 216.8A128 128 0 0 1 334.1 374.3"/>
+    <path d="M341.2 253.7A112 112 0 0 1 305.0 380.3"/>
+    <path d="M360.4 375.9A150 150 0 0 1 287.3 433.0"/>
+    <path d="M325.7 391.6A134 134 0 0 1 254.6 424.7"/>
+  </g>
+  <circle cx="236" cy="292" r="70" fill="#C8A0E8"/>
+  <polyline points="184,292 210,292 221,270 235,322 249,254 260,304 267,292 288,292" fill="none" stroke="#1D1B4C" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M436 66v140l-60 64" fill="none" stroke="#FBEBD0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="408" y="40" width="56" height="52" rx="10" fill="#E8531F"/>
+  <path d="M352 252l38 34-20 22-38-34Z" fill="#E8531F" stroke="#E8531F" stroke-width="6" stroke-linejoin="round"/>
+</svg>
