@@ -18,6 +18,8 @@
  *   node scripts/build-catalog.mjs --verify-only   # re-check the committed catalog
  *   node scripts/build-catalog.mjs --refilter      # re-apply the content filters to it
  *
+ * It refuses to write a catalog of fewer than 100 tracks unless --allow-small is passed.
+ *
  * Behind an HTTPS proxy, run with NODE_USE_ENV_PROXY=1 so Node's fetch uses it.
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -36,12 +38,20 @@ const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const option = (name, fallback) => {
   const index = args.indexOf(name);
-  return index >= 0 && args[index + 1] ? Number(args[index + 1]) : fallback;
+  if (index < 0) return fallback;
+  const value = Number(args[index + 1]);
+  if (!Number.isInteger(value) || value < 1) {
+    console.error(`${name} needs a positive whole number (got "${args[index + 1] ?? ""}").`);
+    process.exit(2);
+  }
+  return value;
 };
 const TARGET = option("--target", 1000);
 const MAX_REQUESTS = option("--max-requests", 170);
 const PAGES_PER_SEED = option("--pages", 2);
 const PER_ARTIST = 3;
+// Never replace the committed catalog with a near-empty one by accident (--allow-small to force).
+const MIN_TRACKS = 100;
 const TOKEN = process.env.OPENVERSE_ACCESS_TOKEN;
 const PAGE_SIZE = TOKEN ? 50 : 20;
 // 20 requests a minute anonymously: one every 3.2 s leaves headroom.
@@ -260,6 +270,7 @@ async function search(seed, page) {
       requests = MAX_REQUESTS;
     }
     if (response.status === 429) {
+      if (requests >= MAX_REQUESTS) return null; // out of allowance: don't wait to retry
       const retry = Number(response.headers.get("retry-after")) || 60;
       console.warn(`Rate limited; waiting ${retry}s`);
       await sleep(retry * 1000);
@@ -420,6 +431,11 @@ function attributions(tracks) {
 }
 
 async function write(tracks) {
+  if (tracks.length < MIN_TRACKS && !flag("--allow-small")) {
+    throw new Error(
+      `Only ${tracks.length} tracks; not overwriting the catalog (pass --allow-small to write it).`,
+    );
+  }
   const sorted = sortTracks(tracks);
   await mkdir(path.dirname(CATALOG), { recursive: true });
   // One track per line: small, and every change shows up as a readable diff.
@@ -457,11 +473,20 @@ async function main() {
 
   const bySeed = new Map();
   const seenIds = new Set();
-  for (let page = 1; page <= PAGES_PER_SEED; page += 1) {
-    for (const seed of SEEDS) {
+  let stopped = false;
+  for (let page = 1; page <= PAGES_PER_SEED && !stopped; page += 1) {
+    for (const [index, seed] of SEEDS.entries()) {
       if (page > 1 && (bySeed.get(seed.q)?.exhausted ?? false)) continue;
       const data = await search(seed, page);
-      if (!data) break;
+      if (!data) {
+        const skipped = SEEDS.slice(index).map((s) => s.q);
+        console.warn(
+          `Stopped searching at page ${page}: request budget used or rate limited. ` +
+            `Not searched on this page: ${skipped.join(", ")}.`,
+        );
+        stopped = true;
+        break;
+      }
       const list = bySeed.get(seed.q) || Object.assign([], { exhausted: false });
       for (const result of data.results || []) {
         if (seenIds.has(result.id)) continue;
@@ -478,7 +503,7 @@ async function main() {
         `[${requests}] ${seed.q} p${page}: ${data.results?.length ?? 0} results, ${total} candidates`,
       );
     }
-    if (requests >= MAX_REQUESTS) break;
+    if (requests >= MAX_REQUESTS) stopped = true;
   }
 
   // Over-select so tracks that fail verification can be dropped and still reach the target.

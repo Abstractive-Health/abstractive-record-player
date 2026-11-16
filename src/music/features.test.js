@@ -18,6 +18,17 @@ describe("extractFeatures", () => {
       [],
     );
     expect(ids(extractFeatures("Type 2 diabetes; no history of cancer."))).toEqual(["metabolic"]);
+    expect(ids(extractFeatures("Denies palpitations or chest pain, or heart failure"))).toEqual([]);
+  });
+
+  it("ends a negation at a contrast, as in 'No fever, but has asthma'", () => {
+    expect(ids(extractFeatures("No fever, but has asthma and hypertension.")).sort()).toEqual([
+      "cardiac",
+      "respiratory",
+    ]);
+    expect(ids(extractFeatures("Not diabetic; however, recent pneumonia."))).toEqual([
+      "respiratory",
+    ]);
   });
 
   it("calms down for high-acuity charts and brightens for improving ones", () => {
@@ -48,6 +59,9 @@ describe("ageBand", () => {
   it.each([
     ["A 4-year-old boy", "child"],
     ["16 yo female", "teen"],
+    ["72 y.o. male", "older"],
+    ["Pt is 45 y/o, stable", "middle"],
+    ["30 yoga classes", null],
     ["32 year old", "young"],
     ["Age: 58", "middle"],
     ["84-year-old woman", "older"],

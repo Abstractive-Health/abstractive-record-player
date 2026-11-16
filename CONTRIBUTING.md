@@ -18,7 +18,7 @@ on purpose so it's easy to learn from and fork.
 2. Run `npm ci`, then `npm run lint` and `npm test` before you push.
 3. Open a pull request that explains what changed and why.
 
-Pull requests need passing CI and an approving review from a code owner. For now, only Abstractive
+Pull requests need passing CI and an approving review. For now, only Abstractive
 Health employees can merge to `main`.
 
 ## Changing the music catalog

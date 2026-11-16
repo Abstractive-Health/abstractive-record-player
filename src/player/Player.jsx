@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Vinyl from "./Vinyl.jsx";
 
+const LOAD_FAILED = "This song couldn't be loaded right now.";
+
 const LICENSES = { cc0: "CC0", pdm: "Public domain", by: "CC BY", "by-sa": "CC BY-SA" };
 
 export function licenseLabel(track) {
@@ -34,8 +36,14 @@ export default function Player({ track, note }) {
     }
     try {
       await element.play();
-    } catch {
-      setProblem("The browser blocked playback. Press play again.");
+    } catch (error) {
+      // NotAllowedError: autoplay policy. Anything else: the audio itself failed, which onError
+      // may already have reported.
+      setProblem((current) =>
+        error?.name === "NotAllowedError"
+          ? "The browser blocked playback. Press play again."
+          : current || LOAD_FAILED,
+      );
     }
   }
 
@@ -96,7 +104,7 @@ export default function Player({ track, note }) {
         onEnded={() => setPlaying(false)}
         onError={() => {
           setPlaying(false);
-          setProblem("This song couldn't be loaded right now.");
+          setProblem(LOAD_FAILED);
         }}
       />
       <footer className="footer">

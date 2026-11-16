@@ -1,3 +1,5 @@
-# Code owners review every pull request to main (see .github/rulesets/main.json).
-# Replace with an Abstractive Health team (for example @Abstractive-Health/engineering) once one exists.
+# Requested as reviewers on every pull request. Approval from a code owner is not required yet
+# (.github/rulesets/main.json): with a single owner, their own pull requests could never merge.
+# Once an Abstractive Health team exists, replace this with it (e.g. @Abstractive-Health/engineering)
+# and set "require_code_owner_review": true in the ruleset.
 * @vincehartman38

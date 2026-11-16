@@ -77,9 +77,11 @@ The app is built so that patient information stays in the clinician's browser ta
 - **Where it lives:** in JavaScript memory while the song is picked (`src/App.jsx`,
   `chooseSong`). Only the chosen track is kept. It's never written to storage, never logged,
   never put in a URL.
-- **What the browser stores:** fhirclient keeps the SMART session (access token, the opaque
-  patient id) in this tab's `sessionStorage`, which the browser clears when the tab closes. There
-  are no cookies, no `localStorage`, no analytics.
+- **What the browser stores:** fhirclient keeps the SMART session in this tab's `sessionStorage`,
+  which the browser clears when the tab closes. That's the token response: the access token, the
+  opaque patient id, the granted scopes and the organization. (Abstractive leaves the clinician's
+  name and NPI out of token responses to browser apps; other SMART servers may include user
+  details.) There are no cookies, no `localStorage`, no analytics.
 - **What leaves the browser:** requests to the Abstractive FHIR server (to read the summary), and
   one request for the chosen song's audio file. That request is a fixed URL from the catalog with
   no search terms and no referrer (`Referrer-Policy: no-referrer`).
@@ -216,8 +218,11 @@ Abstractive's infrastructure repository.
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Anyone can open a pull request,
 but for now **only Abstractive Health employees can merge to `main`**. That's enforced by
-repository permissions and the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json):
-pull requests only, an approving code-owner review, passing CI, and no force-pushes or deletion.
+repository permissions (only Abstractive staff have write access) and the ruleset in
+[`.github/rulesets/main.json`](.github/rulesets/main.json): pull requests only, one approving review,
+passing CI, and no force-pushes or deletion. Code owners are requested as reviewers; once an
+Abstractive Health team exists, `CODEOWNERS` should name it and the ruleset should require a
+code-owner approval (`require_code_owner_review`).
 Report security issues as described in [SECURITY.md](SECURITY.md).
 
 ## License

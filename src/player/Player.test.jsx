@@ -62,11 +62,24 @@ describe("Player", () => {
   });
 
   it("explains a blocked play", async () => {
-    HTMLMediaElement.prototype.play.mockRejectedValueOnce(new Error("NotAllowedError"));
+    HTMLMediaElement.prototype.play.mockRejectedValueOnce(
+      Object.assign(new Error("play() failed"), { name: "NotAllowedError" }),
+    );
     const user = userEvent.setup();
     render(<Player track={TRACK} />);
     await user.click(screen.getByRole("button", { name: "Play" }));
     expect(screen.getByRole("alert")).toHaveTextContent("blocked playback");
+  });
+
+  it("says the song couldn't load when the audio itself fails", async () => {
+    HTMLMediaElement.prototype.play.mockRejectedValueOnce(
+      Object.assign(new Error("no supported source"), { name: "NotSupportedError" }),
+    );
+    const user = userEvent.setup();
+    render(<Player track={TRACK} />);
+    await user.click(screen.getByRole("button", { name: "Play" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("couldn't be loaded");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("blocked");
   });
 
   it("labels licenses", () => {

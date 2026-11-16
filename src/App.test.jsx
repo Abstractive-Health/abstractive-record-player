@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import App, { chooseSong } from "./App.jsx";
+import App, { chooseSong, readChart } from "./App.jsx";
 import { LaunchError } from "./smart/launch.js";
 
 const CATALOG = [
@@ -78,5 +78,40 @@ describe("chooseSong", () => {
     expect(failed.source).toBe("error");
     expect(CATALOG).toContain(failed.track);
     expect(console.warn).not.toHaveBeenCalledWith(expect.stringContaining("Forbidden"));
+  });
+});
+
+describe("readChart", () => {
+  const bundle = (resources) => ({
+    resourceType: "Bundle",
+    entry: resources.map((resource) => ({ resource })),
+  });
+  const client = (serverUrl, onRequest) => ({
+    state: { serverUrl },
+    patient: { id: "p1" },
+    request: vi.fn(onRequest),
+  });
+
+  it("falls back to the problem list when a SMART sandbox rejects the AI-summary search", async () => {
+    const sandbox = client("https://launch.smarthealthit.org/v/r4/fhir", async (url) => {
+      if (url.startsWith("DocumentReference"))
+        throw Object.assign(new Error("Bad Request"), { status: 400 });
+      if (url.startsWith("Patient/")) return { resourceType: "Patient" };
+      return bundle([{ resourceType: "Condition", code: { text: "Asthma" } }]);
+    });
+    await expect(readChart(sandbox)).resolves.toEqual({
+      text: "Problem list:\n- Asthma",
+      source: "problems",
+    });
+  });
+
+  it("on Abstractive reads only the AI summary, and reports a failed read", async () => {
+    const abstractive = client("https://test-api.abstractive.ai/fhir/r4", async () => {
+      throw Object.assign(new Error("Forbidden"), { status: 403 });
+    });
+    await expect(readChart(abstractive)).rejects.toThrow("Forbidden");
+    expect(abstractive.request).toHaveBeenCalledTimes(1);
+    const empty = client("https://test-api.abstractive.ai/fhir/r4", async () => bundle([]));
+    await expect(readChart(empty)).resolves.toEqual({ text: null, source: "missing" });
   });
 });

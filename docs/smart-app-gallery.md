@@ -19,7 +19,7 @@ with synthetic patients; it needs no Abstractive account.
 | Category             | Clinician engagement / sample and developer tools                                                       |
 | Specialties          | All                                                                                                     |
 | FHIR version         | R4                                                                                                      |
-| SMART version        | SMART App Launch 2.x, EHR launch, public client with PKCE S256                                          |
+| SMART version        | SMART App Launch with v1 scopes (`patient/*.read`), EHR launch, public client with PKCE S256            |
 | Launch URL           | https://record-player.abstractive.ai/                                                                   |
 | Redirect URI         | https://record-player.abstractive.ai/                                                                   |
 | Scopes (sandbox)     | `launch patient/DocumentReference.read patient/Binary.read patient/Patient.read patient/Condition.read` |

@@ -15,13 +15,16 @@ import Vinyl from "./player/Vinyl.jsx";
  * @returns {Promise<{text: string|null, source: "summary"|"problems"|"missing"}>}
  */
 export async function readChart(client) {
-  const summary = await fetchSummaryText(client);
-  if (summary) return { text: summary, source: "summary" };
-  if (clientKind(client) === "sandbox") {
-    const problems = await fetchProblemListText(client);
-    if (problems) return { text: problems, source: "problems" };
+  if (clientKind(client) !== "sandbox") {
+    const summary = await fetchSummaryText(client);
+    return summary ? { text: summary, source: "summary" } : { text: null, source: "missing" };
   }
-  return { text: null, source: "missing" };
+  // Other SMART servers may not support the AI-summary search at all; that's no reason to
+  // skip the problem list.
+  const summary = await fetchSummaryText(client).catch(() => null);
+  if (summary) return { text: summary, source: "summary" };
+  const problems = await fetchProblemListText(client);
+  return problems ? { text: problems, source: "problems" } : { text: null, source: "missing" };
 }
 
 /**

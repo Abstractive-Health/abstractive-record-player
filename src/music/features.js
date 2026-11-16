@@ -9,8 +9,10 @@ export const NEUTRAL_PROFILE = Object.freeze({
   genres: {},
 });
 
+// A negation word earlier in the same clause, unless a contrast ("but", "however", ...) ends its
+// scope first, as in NegEx: "No fever, but has asthma" still counts the asthma.
 const NEGATION =
-  /\b(no|denies|denied|negative for|without|not|never|free of|ruled out)\b[^.;:\n]*$/i;
+  /\b(?:no|denies|denied|negative for|without|not|never|free of|ruled out)\b(?:(?!\b(?:but|however|although|though|except|yet|apart from|aside from)\b)[^.;:\n])*$/i;
 const MAX_HITS = 6;
 
 function compile(terms) {
@@ -38,7 +40,7 @@ const clamp = (value, low = 0.05, high = 0.95) => Math.min(high, Math.max(low, v
 export function ageBand(text) {
   const match =
     /\b(\d{1,3})[- ]?(?:year|yr)s?[- ]?old\b/i.exec(text) ||
-    /\b(\d{1,3})\s?(?:yo|y\/o|y\.o\.)\b/i.exec(text) ||
+    /\b(\d{1,3})\s?(?:yo|y\/o|y\.o\.?)(?=\W|$)/i.exec(text) ||
     /\bage(?:d)?:?\s+(\d{1,3})\b/i.exec(text);
   const age = match ? Number(match[1]) : NaN;
   if (!Number.isFinite(age) || age > 120) return null;
