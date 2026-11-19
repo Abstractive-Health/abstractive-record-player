@@ -1,0 +1,42 @@
+name: Refresh music catalog
+
+# Rebuilds src/catalog/tracks.json and ATTRIBUTIONS.md from Openverse and attaches them to the
+# run, so a maintainer can review them and open a pull request. Nothing is committed automatically.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Number of tracks
+        default: "1000"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build the catalog
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          case "$TARGET" in ''|*[!0-9]*) echo "::error::target must be a number"; exit 1 ;; esac
+          node scripts/build-catalog.mjs --target "$TARGET"
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: music-catalog
+          path: |
+            src/catalog/tracks.json
+            ATTRIBUTIONS.md
+          retention-days: 14

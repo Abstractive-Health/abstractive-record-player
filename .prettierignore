@@ -1,0 +1,6 @@
+dist/
+node_modules/
+coverage/
+src/catalog/tracks.json
+ATTRIBUTIONS.md
+package-lock.json

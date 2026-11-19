@@ -1,0 +1,17 @@
+# Cloudflare Pages response headers (https://developers.cloudflare.com/pages/configuration/headers/).
+# connect-src: the FHIR servers this build accepts (VITE_ABSTRACTIVE_ISS, VITE_SANDBOX_ISS).
+# media-src: the catalog's audio hosts (scripts/build-catalog.mjs prints them; a test keeps them in sync).
+# frame-ancestors: Abstractive opens the app inside the chart; the SMART App Launcher can too.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://test-api.abstractive.ai https://api.abstractive.ai https://launch.smarthealthit.org; media-src https://prod-1.storage.jamendo.com; frame-ancestors https://app.abstractive.ai https://test-app.abstractive.ai https://launch.smarthealthit.org; base-uri 'none'; form-action 'none'; object-src 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  X-Robots-Tag: noindex, nofollow
+
+/index.html
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
