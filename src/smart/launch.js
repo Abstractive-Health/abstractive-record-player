@@ -35,6 +35,9 @@ export async function launch({
       "Open Record Player from a patient's chart in Abstractive Health or from the SMART App Launcher.",
     );
   }
+  // fhirclient revives a stored session before honoring a new launch, so a second chart
+  // opened in the same tab would get the first chart's patient.
+  if (params.get("launch")) forgetSession();
   try {
     return await smartInit({
       clientId: CLIENT_ID,
@@ -65,6 +68,18 @@ function hasSession() {
     return Boolean(window.sessionStorage.getItem("SMART_KEY"));
   } catch {
     return false;
+  }
+}
+
+/** Drop fhirclient's stored session (SMART_KEY points at the state entry). */
+export function forgetSession(storage) {
+  try {
+    storage ??= window.sessionStorage;
+    const key = JSON.parse(storage.getItem("SMART_KEY") || "null");
+    if (typeof key === "string") storage.removeItem(key);
+    storage.removeItem("SMART_KEY");
+  } catch {
+    // No usable sessionStorage: fhirclient has nothing stored to revive either.
   }
 }
 

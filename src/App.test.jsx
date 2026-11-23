@@ -81,6 +81,33 @@ describe("chooseSong", () => {
   });
 });
 
+describe("chooseSong without chart text", () => {
+  const many = Array.from({ length: 40 }, (_, i) => ({
+    ...CATALOG[0],
+    id: `t${i}`,
+    title: `Track ${i}`,
+  }));
+  const pick = (id, read = async () => ({ text: null, source: "missing" })) =>
+    chooseSong({ client: { patient: { id } }, read, catalog: many, date: DATE() });
+
+  it("gives different patients different songs, and each patient the same one", async () => {
+    const songs = new Set();
+    for (const id of ["p1", "p2", "p3", "p4", "p5"]) songs.add((await pick(id)).track.id);
+    expect(songs.size).toBeGreaterThan(1);
+    expect((await pick("p1")).track).toEqual((await pick("p1")).track);
+  });
+
+  it("does the same when the chart can't be read", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fail = async () => {
+      throw new Error("Bad Gateway");
+    };
+    const songs = new Set();
+    for (const id of ["p1", "p2", "p3", "p4", "p5"]) songs.add((await pick(id, fail)).track.id);
+    expect(songs.size).toBeGreaterThan(1);
+  });
+});
+
 describe("readChart", () => {
   const bundle = (resources) => ({
     resourceType: "Bundle",

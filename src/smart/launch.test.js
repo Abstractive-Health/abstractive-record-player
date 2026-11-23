@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { clientKind, launch, LaunchError } from "./launch.js";
+import { clientKind, forgetSession, launch, LaunchError } from "./launch.js";
 import { matchesIss, serverKind } from "../config.js";
 
 const SERVERS = {
@@ -62,6 +62,37 @@ describe("launch", () => {
     await expect(launch({ location: at("?code=c&state=s"), smartInit, kindOf })).rejects.toThrow(
       "This launch has expired.",
     );
+  });
+
+  it("starts a new launch instead of reviving the previous chart's session", async () => {
+    sessionStorage.setItem("SMART_KEY", JSON.stringify("old-state"));
+    sessionStorage.setItem("old-state", JSON.stringify({ tokenResponse: { patient: "a" } }));
+    const smartInit = vi.fn(async () => {
+      expect(sessionStorage.getItem("SMART_KEY")).toBeNull();
+      expect(sessionStorage.getItem("old-state")).toBeNull();
+      return "client";
+    });
+    await launch({ location: at(`?iss=${ABSTRACTIVE_ISS}&launch=b`), smartInit, kindOf });
+    expect(smartInit).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the session on the redirect back and on reloads", async () => {
+    sessionStorage.setItem("SMART_KEY", JSON.stringify("state"));
+    sessionStorage.setItem("state", "{}");
+    const smartInit = vi.fn().mockResolvedValue("client");
+    await launch({ location: at("?code=c&state=state"), smartInit, kindOf });
+    await launch({ location: at(""), smartInit, kindOf });
+    expect(sessionStorage.getItem("SMART_KEY")).toBe('"state"');
+    sessionStorage.clear();
+  });
+
+  it("forgets nothing when sessionStorage is unusable", () => {
+    const broken = {
+      getItem: () => {
+        throw new Error("SecurityError");
+      },
+    };
+    expect(() => forgetSession(broken)).not.toThrow();
   });
 
   it("tells the server kind from the authorized client", () => {

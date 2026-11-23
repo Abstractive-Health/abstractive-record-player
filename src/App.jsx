@@ -32,17 +32,29 @@ export async function readChart(client) {
  * chooseSong(): it becomes a profile and a seed, and only the chosen track is kept.
  */
 export async function chooseSong({ client, read, catalog, date }) {
+  // Without chart text, seed by patient so charts still differ (hashed, never kept).
+  const fallbackSeed = () => songSeed(`patient:${patientIdOf(client)}`, date);
   let chart;
   try {
     chart = await read(client);
   } catch (error) {
     // Still play something; say why without logging any patient data.
     console.warn("Record Player: the chart could not be read", error?.status ?? "");
-    return { track: pickTrack(catalog, NEUTRAL_PROFILE, songSeed("", date)), source: "error" };
+    return { track: pickTrack(catalog, NEUTRAL_PROFILE, fallbackSeed()), source: "error" };
   }
-  const profile = chart.text ? extractFeatures(chart.text) : NEUTRAL_PROFILE;
-  const track = pickTrack(catalog, profile, songSeed(chart.text, date));
+  if (!chart.text) {
+    return { track: pickTrack(catalog, NEUTRAL_PROFILE, fallbackSeed()), source: chart.source };
+  }
+  const track = pickTrack(catalog, extractFeatures(chart.text), songSeed(chart.text, date));
   return { track, source: chart.source };
+}
+
+function patientIdOf(client) {
+  try {
+    return client?.getPatientId?.() ?? client?.patient?.id ?? "";
+  } catch {
+    return "";
+  }
 }
 
 const today = () => new Date();
