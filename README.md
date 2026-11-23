@@ -48,6 +48,7 @@ Abstractive chart ──launch──▶ Record Player ──SMART authorize (PKC
 2. **Authorize.** [`fhirclient`](https://docs.smarthealthit.org/client-js/) runs the SMART EHR
    launch as a _public client_: PKCE S256, no client secret (a browser can't keep one). The app
    only accepts Abstractive's FHIR servers and the SMART App Launcher sandbox as `iss`.
+   Every launch starts a fresh session (see [Every launch is a new patient](#every-launch-is-a-new-patient)).
 3. **Read the summary.** Abstractive publishes the AI summary like any other document: a
    `DocumentReference` whose attachment points at a `Binary`. Its category is
    `https://abstractivehealth.com/fhir/CodeSystem/document-category|ai-summary`. The app asks
@@ -66,6 +67,24 @@ Abstractive chart ──launch──▶ Record Player ──SMART authorize (PKC
 | Scopes in the SMART sandbox | the above plus `patient/Patient.read patient/Condition.read`                    |
 | Not requested               | `openid`, `fhirUser` (no user profile), `offline_access` (no refresh tokens)    |
 | FHIR servers accepted       | `VITE_ABSTRACTIVE_ISS` and `VITE_SANDBOX_ISS` in [`.env`](.env)                 |
+
+### Every launch is a new patient
+
+> [!IMPORTANT]
+> Treat every `?iss=…&launch=…` as a brand-new session, even when your app already has one.
+
+Abstractive shows apps in an iframe, so every chart a clinician opens loads your app in the
+same browser tab. fhirclient keeps its session (access token and patient) in that tab's
+`sessionStorage`, and its `init()` **revives a stored session before it looks at a new
+launch**. Without a guard, the second chart reuses the first chart's token and your app shows
+the first patient's data in the second patient's chart, with no error.
+
+Record Player clears fhirclient's stored session whenever a `launch` parameter arrives
+(`forgetSession()` in [`src/smart/launch.js`](src/smart/launch.js)), then authorizes again. The
+redirect back (`?code=…&state=…`) and plain reloads keep the session. If you fork this app or
+use fhirclient elsewhere, keep that guard. Whatever library you use, never cache the patient,
+token or chart data across launches: read them again for each launch so the app always shows
+the current chart, not a stale one.
 
 ## Privacy by design
 
@@ -200,6 +219,8 @@ Fork this repository and keep what's generic:
 2. **Choose your scopes** in [`src/config.js`](src/config.js). Ask for the least you need.
 3. **Replace the idea.** `src/smart/summary.js` shows how to read the AI summary. Replace
    `src/music/` and `src/player/` with your own logic and UI.
+   Keep the launch guard in `src/smart/launch.js` (see
+   [Every launch is a new patient](#every-launch-is-a-new-patient)).
 4. **Host it anywhere static.** For example Cloudflare Pages, Netlify, GitHub Pages or S3. Copy
    [`public/_headers`](public/_headers) (or its equivalent) and adjust the CSP.
 5. **Register with Abstractive.** Send Abstractive your client id, launch URL, redirect URI and
